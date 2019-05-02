@@ -1,6 +1,7 @@
 # Imports
 from LinearCombinationComponent import LinearCombinationComponent
 from random import randint
+import networkx as nx
 
 # Constants
 MULTIPLIER_BOUND = 3    # multipliers in components will be in [-MULTIPLIER_BOUND, MULTIPLIER_BOUND]
@@ -21,5 +22,10 @@ def generate_random_components(number_of_components=3, number_of_inputs_in_compo
         ret.append(new_comp)
 
     return ret
+
+#create graph
+def generate_graph(list_of_nodes):
+    G = nx.Graph()
+    G.add_nodes_from(list_of_nodes)
 
 
