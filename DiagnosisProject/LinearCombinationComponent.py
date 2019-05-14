@@ -9,6 +9,12 @@ class LinearCombinationComponent:
         self.multipliers = multipliers
         self.b = b
 
+    # Override multipliers and b using given ones (from string)
+    def update_from_string(self, stringed_component):
+        parsed_comps = [unit.split("*")[0] for unit in stringed_component.split(" + ")]
+        self.multipliers = parsed_comps[:-1]
+        self.b = parsed_comps[-1]
+
     # Get a list of values for all xi and returns a number
     def calc_value(self, inputs):
         if len(inputs) != len(self.multipliers):
