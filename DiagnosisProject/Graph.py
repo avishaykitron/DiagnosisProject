@@ -1,16 +1,22 @@
 import csv
 from DiagnosisProject.LinearCombinationComponent import LinearCombinationComponent
+from random import randint
 
 class Graph:
 
     """
     A graph
     Will resemble a graph of components of linear combination (form: a0*x0+a2*x2+...+an-1*xn-1+b)
+    ASSUMPTION: If a component has a SYSIN then it accepts only one input (->[comp]->)
     """
 
-    def __init__(self, csv_path):
+    def __init__(self, csv_path, obs_low_bound=1, obs_high_bound=10, debug=False):
+
         self.id_to_comp = {}
         self.id_to_inputs = {}
+        self.obs_low_bound = obs_low_bound
+        self.obs_high_bound = obs_high_bound
+
         try:
             with open(csv_path, 'r') as f:
                 reader = csv.reader(f)
@@ -32,25 +38,139 @@ class Graph:
                             inputs[int(is_input)] = possible_input_index
                     self.id_to_inputs[comp_id] = inputs
 
-                for key, value in self.id_to_comp.items():
-                    print("{} : {}".format(key, value.to_string()))
-                for key, value in self.id_to_inputs.items():
-                    print("{} : {}".format(key, value))
+                # Save a list of SYSOUTs (id of component whose output is visible)
+                self.sysouts = []
+                for count, is_sysout in enumerate(content[-1][1:-1]):
+                    if is_sysout == "TRUE":
+                        self.sysouts.append(count + 1)
+                self.sysouts.reverse() # ASSUMPTION: final SYSOUT is at last column of components in CSV
+
+                # Print for debug
+                if debug:
+                    for key, value in self.id_to_comp.items():
+                        print("{} : {}".format(key, value.to_string()))
+                    for key, value in self.id_to_inputs.items():
+                        print("{} : {}".format(key, value))
+                    print("SYSOUTS: {}".format(self.sysouts))
 
         except FileNotFoundError:
             print("Unable to read {}".format(csv_path))
 
+    # Returns a dictionary of (id : list(comps)) representing minimal subsystems
+    def get_subsystems(self, debug=False):
+        subsystems = {}
+        for out_comp_id in self.sysouts:
+            curr_subsystem = [out_comp_id]
+            for inp in self.id_to_inputs[out_comp_id]:
+                curr_subsystem.extend(self.expand_comp(inp))
+            subsystems[str.join('_', ["{}".format(i) for i in curr_subsystem])] = curr_subsystem
+
+        if debug:
+            for key, value in subsystems.items():
+                print("{} : {}".format(key, value))
+        return subsystems
+
+    # Helper for get_subsystems
+    def expand_comp(self, cid):
+        if cid == "SYSIN":
+            return []
+
+        ans = [cid]
+        for inp in self.id_to_inputs[cid]:
+            if inp != "SYSIN" and inp not in self.sysouts:
+                ans.extend(self.expand_comp(inp))
+
+        return ans
+
     # Run inputs through the graph and returns a list of tuples (comp_id, SYSOUT value) with all SYSOUTs
     def run_in_graph(self, sysins):
-        pass
+        ans = []
+        curr_ins = list(sysins)
+        already_calculated = {}
+        for out_comp_id in self.sysouts:
+            result, _, _ = self.calc_subgraph(out_comp_id, curr_ins, already_calculated)
+            ans.append((out_comp_id, result))
+        return ans
+
+    # Helper for run_in_graph - calc/expand MAKE SURE sysins and memoization are updated
+    def calc_subgraph(self, comp_id, sysins, memoization):
+        if comp_id == "SYSIN":
+            return sysins[0], sysins[1:], memoization
+        elif comp_id in memoization.keys():
+            return memoization[comp_id], sysins, memoization
+        else:
+            calced_ins = []
+            for inp in self.id_to_inputs[comp_id]:
+                res, sysins, memoization = self.calc_subgraph(inp, sysins, memoization)
+                calced_ins.append(res)
+            c_ans = self.id_to_comp[comp_id].calc_value(calced_ins)
+            memoization[comp_id] = c_ans
+            return c_ans, sysins, memoization
+
+
 
     # generate valid samples (based on the current graph) with random inputs
     def generate_samples(self, number_of_sample):
-        pass
+        all_observations = []
+        subsystems = self.get_subsystems()
+
+        number_of_sysins_to_generate = 0
+        for ins in self.id_to_inputs.values():
+            number_of_sysins_to_generate += sum([1 if x == 'SYSIN' else 0 for x in ins])
+
+        for index in range(number_of_sample):
+
+            curr_ins = [randint(self.obs_low_bound,self.obs_high_bound) for i in range(number_of_sysins_to_generate)]#[70, 71, 72, 73, 74]
+
+            partial_observations = self.run_in_graph(curr_ins) # holds out_comp_id and result
+            for obs in partial_observations:
+                to_add_obs = ["SUBSYSTEM", ['input components'], ['input values'], 'output comp id', -1]
+                to_add_obs[3] = obs[0]
+                to_add_obs[4] = obs[1]
+                for ss in subsystems.keys():
+                    if str(obs[0]) == ss[0]:
+                        to_add_obs[0] = ss
+                        to_add_obs[1] = self.get_ins_of_subsystems(ss)
+                print(to_add_obs) # TODO : ADD RELEVANT INPUT COMPS AND VALUES
 
     # Returns a new Graph with an implanted "bug" in comp
     def plant_bug(self, comp):
         pass
+
+    # Export graph & valid observations details into a file (for later use)
+    def export_to_file(self, observations, path="example_graph_output.txt"):
+        with open(path, "w+") as f:
+            f.write("Subsystems:\n")
+
+            subsystems = self.get_subsystems()
+            for ss in subsystems:
+                f.write("{}\n".format(ss))
+
+            f.write("\nSYSINS:\n")
+            ins = []
+            for comp_id in self.id_to_comp.keys():
+                if "SYSIN" in self.id_to_inputs[comp_id]:
+                    ins.append(comp_id)
+            f.write(str.join(", ", [str(i) for i in ins]))
+
+            f.write("\n\nSYSOUTS:\n")
+            f.write(str.join(", ", [str(i) for i in self.sysouts]))
+
+            f.write("\n\nNormalObservations:\n")
+
+    # Return ins of the subsystems (ids of comps that accepts the sub-system's inputs)
+    def get_ins_of_subsystems(self, sub_system_id, curr_c=-1):
+        out_comp = curr_c
+        if out_comp == -1:
+            out_comp = int(str.split(sub_system_id, "_")[0])
+        ret = []
+        if 'SYSIN' in self.id_to_inputs[out_comp]:
+            ret = [out_comp]
+        else:
+            for i in self.id_to_inputs[out_comp]:
+                ret.extend(self.get_ins_of_subsystems(sub_system_id, curr_c=int(i)))
+        return ret
+
 
     # Returns a string representation of the graph
     def to_string(self):
@@ -58,4 +178,6 @@ class Graph:
 
 
 example_graph = Graph("DiagnosisProject\\example_graph.csv")
-example_graph.run_in_graph([0, 1, 2, 3, 4, 5])
+example_graph.get_subsystems()
+example_graph.generate_samples(3)
+#example_graph.export_to_file([])
