@@ -72,7 +72,7 @@ class Graph:
 
     # Helper for get_subsystems
     def expand_comp(self, cid):
-        if cid == "SYSIN":
+        if cid == "SYSIN" or cid in self.sysouts:
             return []
 
         ans = [cid]
@@ -87,25 +87,30 @@ class Graph:
         ans = []
         curr_ins = list(sysins)
         already_calculated = {}
+        id_to_ins = {}
         for out_comp_id in self.sysouts:
-            result, _, _ = self.calc_subgraph(out_comp_id, curr_ins, already_calculated)
+            result, _, already_calculated, id_to_ins = self.calc_subgraph(out_comp_id,
+                                                                          curr_ins,
+                                                                          already_calculated,
+                                                                          id_to_ins)
             ans.append((out_comp_id, result))
-        return ans
+        return ans, already_calculated, id_to_ins
 
     # Helper for run_in_graph - calc/expand MAKE SURE sysins and memoization are updated
-    def calc_subgraph(self, comp_id, sysins, memoization):
+    def calc_subgraph(self, comp_id, sysins, memoization, id_to_ins, prev_id=-1):
         if comp_id == "SYSIN":
-            return sysins[0], sysins[1:], memoization
+            id_to_ins[prev_id] = sysins[0]
+            return sysins[0], sysins[1:], memoization, id_to_ins
         elif comp_id in memoization.keys():
-            return memoization[comp_id], sysins, memoization
+            return memoization[comp_id], sysins, memoization, id_to_ins
         else:
             calced_ins = []
             for inp in self.id_to_inputs[comp_id]:
-                res, sysins, memoization = self.calc_subgraph(inp, sysins, memoization)
+                res, sysins, memoization, id_to_ins = self.calc_subgraph(inp, sysins, memoization, id_to_ins, comp_id)
                 calced_ins.append(res)
             c_ans = self.id_to_comp[comp_id].calc_value(calced_ins)
             memoization[comp_id] = c_ans
-            return c_ans, sysins, memoization
+            return c_ans, sysins, memoization, id_to_ins
 
 
 
@@ -122,15 +127,22 @@ class Graph:
 
             curr_ins = [randint(self.obs_low_bound,self.obs_high_bound) for i in range(number_of_sysins_to_generate)]#[70, 71, 72, 73, 74]
 
-            partial_observations = self.run_in_graph(curr_ins) # holds out_comp_id and result
-            for obs in partial_observations:
-                to_add_obs = ["SUBSYSTEM", ['input components'], ['input values'], 'output comp id', -1]
+            partial_observations, already_calculated, id_to_ins = self.run_in_graph(curr_ins) # holds out_comp_id and result
+            for obs in reversed(partial_observations):
+                to_add_obs = ["SUBSYSTEM", ['input components'], [], 'output comp id', -1]
                 to_add_obs[3] = obs[0]
                 to_add_obs[4] = obs[1]
                 for ss in subsystems.keys():
                     if str(obs[0]) == ss[0]:
                         to_add_obs[0] = ss
                         to_add_obs[1] = self.get_ins_of_subsystems(ss)
+                        if to_add_obs[1] != ['SYSIN']:
+                            for inp in to_add_obs[1]:
+                                to_add_obs[2].append(already_calculated[inp])
+                        else:
+                            to_add_obs[2].append(id_to_ins[to_add_obs[3]])
+
+
                 print(to_add_obs) # TODO : ADD RELEVANT INPUT COMPS AND VALUES
 
     # Returns a new Graph with an implanted "bug" in comp
@@ -159,25 +171,24 @@ class Graph:
             f.write("\n\nNormalObservations:\n")
 
     # Return ins of the subsystems (ids of comps that accepts the sub-system's inputs)
-    def get_ins_of_subsystems(self, sub_system_id, curr_c=-1):
+    def get_ins_of_subsystems(self, sub_system_id, curr_c=-1, iteration=0):
         out_comp = curr_c
         if out_comp == -1:
             out_comp = int(str.split(sub_system_id, "_")[0])
         ret = []
         if 'SYSIN' in self.id_to_inputs[out_comp]:
-            ret = [out_comp]
+            ret = ['SYSIN'] if iteration == 0 else [out_comp]
         else:
             for i in self.id_to_inputs[out_comp]:
-                ret.extend(self.get_ins_of_subsystems(sub_system_id, curr_c=int(i)))
+                ret.extend(self.get_ins_of_subsystems(sub_system_id, curr_c=int(i), iteration=iteration+1))
         return ret
-
 
     # Returns a string representation of the graph
     def to_string(self):
         pass
 
 
-example_graph = Graph("DiagnosisProject\\example_graph.csv")
-example_graph.get_subsystems()
+example_graph = Graph("DiagnosisProject\\example_graph.csv", debug=False)
+example_graph.get_subsystems(debug=False)
 example_graph.generate_samples(3)
-#example_graph.export_to_file([])
+# #example_graph.export_to_file([])
