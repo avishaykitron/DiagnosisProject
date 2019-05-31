@@ -27,3 +27,8 @@ class LinearCombinationComponent:
         for i, ai in enumerate(self.multipliers):
             ans += "{}*x{} + ".format(ai, i)
         return ans+"{}".format(self.b)
+
+    # Gets a list of multipliers and b and updates own values
+    def update_from_ints(self, n_multipliers, n_b):
+        self.multipliers = n_multipliers
+        self.b = n_b

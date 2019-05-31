@@ -1,6 +1,7 @@
 import csv
 from DiagnosisProject.LinearCombinationComponent import LinearCombinationComponent
 from random import randint
+import copy
 
 class Graph:
 
@@ -112,8 +113,6 @@ class Graph:
             memoization[comp_id] = c_ans
             return c_ans, sysins, memoization, id_to_ins
 
-
-
     # generate valid samples (based on the current graph) with random inputs
     def generate_samples(self, number_of_sample):
         all_observations = []
@@ -141,16 +140,35 @@ class Graph:
                                 to_add_obs[2].append(already_calculated[inp])
                         else:
                             to_add_obs[2].append(id_to_ins[to_add_obs[3]])
+                all_observations.append(to_add_obs)
+        return all_observations
 
-
-                print(to_add_obs) # TODO : ADD RELEVANT INPUT COMPS AND VALUES
+    # generate invalid samples (based on buggy graph) with random inputs.
+    # Returns the observations and ids of buggy comps
+    def generate_buggy_samples(self, number_of_samples, number_of_bugs=1):
+        if number_of_bugs > len(self.id_to_comp.keys()):
+            print("Too many requested bugs ({})".format(number_of_bugs))
+            return [], []
+        ids = [randint(1, len(self.id_to_comp.keys())) for _ in range(number_of_bugs)]
+        buggy_graph = self.plant_bug(ids)
+        buggy_obs = buggy_graph.generate_samples(number_of_samples)
+        return buggy_obs, ids
 
     # Returns a new Graph with an implanted "bug" in comp
-    def plant_bug(self, comp):
-        pass
+    def plant_bug(self, comp_ids):
+        buggy_graph = copy.deepcopy(self)
+        for cid in comp_ids:
+            old_comp = self.id_to_comp[cid]
+            defected = copy.deepcopy(old_comp)
+            new_ms = []
+            for m in defected.multipliers:
+                new_ms.append(2 * m)
+            defected.update_from_ints(new_ms, defected.b + 1)
+            buggy_graph.id_to_comp[cid] = defected
+        return buggy_graph
 
     # Export graph & valid observations details into a file (for later use)
-    def export_to_file(self, observations, path="example_graph_output.txt"):
+    def export_to_file(self, reg_observations, buggy_observations, defect_ids, path="example_graph_output.txt"):
         with open(path, "w+") as f:
             f.write("Subsystems:\n")
 
@@ -168,7 +186,22 @@ class Graph:
             f.write("\n\nSYSOUTS:\n")
             f.write(str.join(", ", [str(i) for i in self.sysouts]))
 
+            f.write("\n\nTotalRegularObservations:\n{}".format(int(len(reg_observations) / len(self.sysouts))))
+
             f.write("\n\nNormalObservations:\n")
+            for obs in reg_observations:
+                f.write("{}\n".format(obs))
+
+            f.write("\nTotalBuggyObservations:\n{}".format(int(len(buggy_observations) / len(self.sysouts))))
+
+            f.write("\n\nBuggyObservations:\n")
+            for bobs in buggy_observations:
+                f.write("{}\n".format(bobs))
+            f.write('\nBuggyIds\n')
+            f.write(str.join(", ", [str(d) for d in defect_ids]))
+
+
+
 
     # Return ins of the subsystems (ids of comps that accepts the sub-system's inputs)
     def get_ins_of_subsystems(self, sub_system_id, curr_c=-1, iteration=0):
@@ -185,10 +218,20 @@ class Graph:
 
     # Returns a string representation of the graph
     def to_string(self):
-        pass
+        for key, value in self.id_to_comp.items():
+            print("{} : {}".format(key, value.to_string()))
+        for key, value in self.id_to_inputs.items():
+            print("{} : {}".format(key, value))
+        print("SYSOUTS: {}".format(self.sysouts))
 
 
 example_graph = Graph("DiagnosisProject\\example_graph.csv", debug=False)
 example_graph.get_subsystems(debug=False)
-example_graph.generate_samples(3)
-# #example_graph.export_to_file([])
+obs = example_graph.generate_samples(10)
+# buggy_example = example_graph.plant_bug([1, 2])
+# print('EXAMPLE')
+# example_graph.to_string()
+# print('BUGGY')
+# buggy_example.to_string()
+bobs, def_ids = example_graph.generate_buggy_samples(10)
+example_graph.export_to_file(reg_observations=obs, buggy_observations=bobs, defect_ids=def_ids)
