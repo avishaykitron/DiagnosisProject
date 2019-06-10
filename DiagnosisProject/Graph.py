@@ -1,5 +1,5 @@
 import csv
-from DiagnosisProject.LinearCombinationComponent import LinearCombinationComponent
+from LinearCombinationComponent import LinearCombinationComponent
 from random import randint
 import copy
 
@@ -17,6 +17,7 @@ class Graph:
         self.id_to_inputs = {}
         self.obs_low_bound = obs_low_bound
         self.obs_high_bound = obs_high_bound
+
 
         try:
             with open(csv_path, 'r') as f:
@@ -225,13 +226,13 @@ class Graph:
         print("SYSOUTS: {}".format(self.sysouts))
 
 
-# example_graph = Graph("C:\\Users\\OFIR\\PycharmProjects\\DiagnosisProjectGit\\DiagnosisProject\\example_graph.csv", debug=False)
-# example_graph.get_subsystems(debug=False)
-# obs = example_graph.generate_samples(10)
-# # buggy_example = example_graph.plant_bug([1, 2])
-# # print('EXAMPLE')
-# # example_graph.to_string()
-# # print('BUGGY')
-# # buggy_example.to_string()
-# bobs, def_ids = example_graph.generate_buggy_samples(10)
-# example_graph.export_to_file(reg_observations=obs, buggy_observations=bobs, defect_ids=def_ids)
+example_graph = Graph("C:\\Users\\אבישי\\Downloads\\DiagnosisProject\\DiagnosisProject\\example_graph.csv", debug=False)
+example_graph.get_subsystems(debug=False)
+obs = example_graph.generate_samples(10)
+# buggy_example = example_graph.plant_bug([1, 2])
+# print('EXAMPLE')
+# example_graph.to_string()
+# print('BUGGY')
+# buggy_example.to_string()
+bobs, def_ids = example_graph.generate_buggy_samples(10)
+example_graph.export_to_file(reg_observations=obs, buggy_observations=bobs, defect_ids=def_ids)
