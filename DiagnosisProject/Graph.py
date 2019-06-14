@@ -11,7 +11,7 @@ class Graph:
     ASSUMPTION: If a component has a SYSIN then it accepts only one input (->[comp]->)
     """
 
-    def __init__(self, csv_path, obs_low_bound=1, obs_high_bound=10, debug=False):
+    def __init__(self, csv_path, obs_low_bound=1, obs_high_bound=2, debug=False):
 
         self.id_to_comp = {}
         self.id_to_inputs = {}
@@ -136,11 +136,22 @@ class Graph:
                     if str(obs[0]) == ss[0]:
                         to_add_obs[0] = ss
                         to_add_obs[1] = self.get_ins_of_subsystems(ss)
-                        if to_add_obs[1] != ['SYSIN']:
-                            for inp in to_add_obs[1]:
+
+                        for inp in to_add_obs[1]:
+                            if (inp == "SYSIN"):
+                                continue
+                            if self.id_to_inputs[inp] != ['SYSIN']:
                                 to_add_obs[2].append(already_calculated[inp])
-                        else:
-                            to_add_obs[2].append(id_to_ins[to_add_obs[3]])
+                            else:
+                                to_add_obs[2].append(id_to_ins[inp])
+
+                        # if to_add_obs[1] != ['SYSIN']:
+                        #     for inp in to_add_obs[1]:
+                        #         #to_add_obs[2].append(curr_ins[inp-1])
+                        #         to_add_obs[2].append(already_calculated[inp])
+                        #
+                        # else:
+                        #     to_add_obs[2].append(id_to_ins[to_add_obs[3]])
                 all_observations.append(to_add_obs)
         return all_observations
 
@@ -169,7 +180,7 @@ class Graph:
         return buggy_graph
 
     # Export graph & valid observations details into a file (for later use)
-    def export_to_file(self, reg_observations, buggy_observations, defect_ids, path="example_graph_output.txt"):
+    def export_to_file(self, reg_observations, buggy_observations, defect_ids, path="example_graph_2_output.txt"):
         with open(path, "w+") as f:
             f.write("Subsystems:\n")
 
@@ -226,13 +237,13 @@ class Graph:
         print("SYSOUTS: {}".format(self.sysouts))
 
 
-example_graph = Graph("C:\\Users\\אבישי\\Downloads\\DiagnosisProject\\DiagnosisProject\\example_graph.csv", debug=False)
-example_graph.get_subsystems(debug=False)
-obs = example_graph.generate_samples(10)
+example_graph = Graph("C:\\Users\\אבישי\\Downloads\\DiagnosisProject\\DiagnosisProject\\example_graph_2.csv", debug=False)
+#example_graph.get_subsystems(debug=False)
+obs = example_graph.generate_samples(5)
 # buggy_example = example_graph.plant_bug([1, 2])
 # print('EXAMPLE')
 # example_graph.to_string()
 # print('BUGGY')
 # buggy_example.to_string()
-bobs, def_ids = example_graph.generate_buggy_samples(10)
+bobs, def_ids = example_graph.generate_buggy_samples(5)
 example_graph.export_to_file(reg_observations=obs, buggy_observations=bobs, defect_ids=def_ids)
