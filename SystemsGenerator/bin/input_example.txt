@@ -1,0 +1,15 @@
+3
+2
+3
+3
+a1+b2
+a,b
+c1-2d
+c,d
+x4+4y
+x,y
+
+Put on Debug Mode And Watch In The Debuger The Shape Of The Object.
+
+*************TO DO**************
+Translate the Object To CSV.
