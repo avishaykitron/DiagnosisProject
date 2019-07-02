@@ -9,7 +9,6 @@ class Graph:
     A graph
     Will resemble a graph of components of linear combination (form: a0*x0+a2*x2+...+an-1*xn-1+b)
     ASSUMPTION: If a component has a SYSIN then it accepts only one input (->[comp]->)
-    ASSUMPTION: final SYSOUT is at last column of components in CSV
     """
 
     def __init__(self, csv_path, obs_low_bound=1, obs_high_bound=2, debug=False):
@@ -88,32 +87,31 @@ class Graph:
     # Run inputs through the graph and returns a list of tuples (comp_id, SYSOUT value) with all SYSOUTs
     def run_in_graph(self, sysins):
         ans = []
-        curr_ins = list(sysins)
+        #curr_ins = list(sysins.values())
+        curr_ins = sysins
         already_calculated = {}
-        id_to_ins = {}
         for out_comp_id in self.sysouts:
-            result, _, already_calculated, id_to_ins = self.calc_subgraph(out_comp_id,
-                                                                          curr_ins,
-                                                                          already_calculated,
-                                                                          id_to_ins)
+            result, _, already_calculated = self.calc_subgraph(out_comp_id,
+                                                               curr_ins,
+                                                               already_calculated)
             ans.append((out_comp_id, result))
-        return ans, already_calculated, id_to_ins
+        return ans, already_calculated
 
     # Helper for run_in_graph - calc/expand MAKE SURE sysins and memoization are updated
-    def calc_subgraph(self, comp_id, sysins, memoization, id_to_ins, prev_id=-1):
+    # bug - sysin values are incorrect - - 26/6
+    def calc_subgraph(self, comp_id, sysins, memoization, prev_id=-1):
         if comp_id == "SYSIN":
-            id_to_ins[prev_id] = sysins[0]
-            return sysins[0], sysins[1:], memoization, id_to_ins
+            return sysins[str(prev_id)], sysins, memoization
         elif comp_id in memoization.keys():
-            return memoization[comp_id], sysins, memoization, id_to_ins
+            return memoization[comp_id], sysins, memoization
         else:
             calced_ins = []
             for inp in self.id_to_inputs[comp_id]:
-                res, sysins, memoization, id_to_ins = self.calc_subgraph(inp, sysins, memoization, id_to_ins, comp_id)
+                res, sysins, memoization = self.calc_subgraph(inp, sysins, memoization, comp_id)
                 calced_ins.append(res)
             c_ans = self.id_to_comp[comp_id].calc_value(calced_ins)
             memoization[comp_id] = c_ans
-            return c_ans, sysins, memoization, id_to_ins
+            return c_ans, sysins, memoization
 
     # generate valid samples (based on the current graph) with random inputs
     def generate_samples(self, number_of_sample):
@@ -125,36 +123,32 @@ class Graph:
             number_of_sysins_to_generate += sum([1 if x == 'SYSIN' else 0 for x in ins])
 
         for index in range(number_of_sample):
+            # form: ['1':70, '2':71, '3':72, '4':73, '5':74]
+            curr_ins = dict(zip(
+                [str(i+1) for i in range(number_of_sysins_to_generate)],
+                [randint(self.obs_low_bound,self.obs_high_bound) for i in range(number_of_sysins_to_generate)]))
 
-            curr_ins = [randint(self.obs_low_bound,self.obs_high_bound) for i in range(number_of_sysins_to_generate)]#[70, 71, 72, 73, 74]
-
-            partial_observations, already_calculated, id_to_ins = self.run_in_graph(curr_ins) # holds out_comp_id and result
+            partial_observations, already_calculated = self.run_in_graph(curr_ins) # holds out_comp_id and result
             for obs in reversed(partial_observations):
                 to_add_obs = ["SUBSYSTEM", ['input components'], [], 'output comp id', -1]
                 to_add_obs[3] = obs[0]
                 to_add_obs[4] = obs[1]
                 for ss in subsystems.keys():
-                    debug_var = ss.split('_')[0] # NEW
-                    if str(obs[0]) == debug_var: # NEW
+                    if str(obs[0]) == ss.split("_")[0]:
                         to_add_obs[0] = ss
                         to_add_obs[1] = self.get_ins_of_subsystems(ss)
 
                         for inp in to_add_obs[1]:
                             if (inp == "SYSIN"):
-                                to_add_obs[2].append(id_to_ins[int(debug_var)]) # NEW
-                                # continue
-                            elif self.id_to_inputs[inp] != ['SYSIN']:
+                                #continue
+                                to_add_obs[2].append(curr_ins[ss])   # ADDED for full probing management - 26/6
+                            #elif self.id_to_inputs[inp] != ['SYSIN']:
+                            elif inp not in subsystems[ss]: # NEW
                                 to_add_obs[2].append(already_calculated[inp])
-                            else:
-                                to_add_obs[2].append(id_to_ins[inp])
+                            else: # TODO ouput of prev if single comp (3), input comp else (2)
+                                to_add_obs[2].append(curr_ins[str(inp)]) # NEW
+                                #to_add_obs[2].append(id_to_ins[inp])
 
-                        # if to_add_obs[1] != ['SYSIN']:
-                        #     for inp in to_add_obs[1]:
-                        #         #to_add_obs[2].append(curr_ins[inp-1])
-                        #         to_add_obs[2].append(already_calculated[inp])
-                        #
-                        # else:
-                        #     to_add_obs[2].append(id_to_ins[to_add_obs[3]])
                 all_observations.append(to_add_obs)
         return all_observations
 
@@ -223,13 +217,14 @@ class Graph:
 
 
 
-    # TODO : Check for changes in version in other version
+
     # Return ins of the subsystems (ids of comps that accepts the sub-system's inputs)
     def get_ins_of_subsystems(self, sub_system_id, curr_c=-1, iteration=0):
         out_comp = curr_c
         if out_comp == -1:
             out_comp = int(str.split(sub_system_id, "_")[0])
         ret = []
+        # added the OR for full probing management - 26/6
         if 'SYSIN' in self.id_to_inputs[out_comp] or (out_comp in self.sysouts and iteration>0):
             ret = ['SYSIN'] if iteration == 0 else [out_comp]
         else:
@@ -246,13 +241,13 @@ class Graph:
         print("SYSOUTS: {}".format(self.sysouts))
 
 
-# example_graph = Graph("C:\\Users\\OFIR\\Documents\\Uni\\סמסטר ח\\תקלות\\DiagnosisProject\\SystemModule.csv", debug=False)
-# #example_graph.get_subsystems(debug=False)
-# obs = example_graph.generate_samples(10)
-# # buggy_example = example_graph.plant_bug([1, 2])
-# # print('EXAMPLE')
-# # example_graph.to_string()
-# # print('BUGGY')
-# # buggy_example.to_string()
-# bobs, def_ids = example_graph.generate_buggy_samples(5)
-# example_graph.export_to_file(reg_observations=obs, buggy_observations=bobs, defect_ids=def_ids, path="ProblemDatasetLG\\SM_output.txt")
+example_graph = Graph("C:\\Users\\landauof\\Desktop\\DiagnosisProject\\DiagnosisProject\\example_graph_3.csv", debug=False)
+#example_graph.get_subsystems(debug=False)
+obs = example_graph.generate_samples(5)
+# buggy_example = example_graph.plant_bug([1, 2])
+# print('EXAMPLE')
+# example_graph.to_string()
+# print('BUGGY')
+# buggy_example.to_string()
+bobs, def_ids = example_graph.generate_buggy_samples(5)
+example_graph.export_to_file(reg_observations=obs, buggy_observations=bobs, defect_ids=def_ids,  path="example_graph_3_output.txt")
