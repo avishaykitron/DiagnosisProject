@@ -3,13 +3,13 @@ This project consist of some parts -
  - Systems generator
  - Problems generator
  - Daignosis 
- ## Systems generator ##
+ # Systems generator #
   System Generator code writen in java .
   The idea of the generator is to generate random system that consist of linear combination components. 
   Because of the randomly behavior of the system, there are some assumptions that we assume in order to generate random system in any  
   size or type of components. 
   
-  ##Assumptions##:
+  ## Assumptions ##:
    - Any input's component, have one argument . which means have one paramter in the linear combination. 
    - The system without cycles. 
    - There are cases that the system not fully conected , due to the randomly behavior.
@@ -35,7 +35,7 @@ This project consist of some parts -
    and the last column shows which component is an input component. 
    
    
-## Problems generator ##
+# Problems generator #
    
    
 # Daignosis #
