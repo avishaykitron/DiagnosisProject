@@ -43,16 +43,16 @@ This project consist of:
    This code writen in python.
    After that we generate system and many problems, we save the porblems in a directory. 
    
-   each problem file represent a specific problem which means that it has the properties. 
-    - sub-systems
-    - input components
-    - outputs component
-    - number of normal observations
-    - the normal observations.
-    - number of buggy observations.
-    - the buggy observations. 
-    - the id of the buggy components.
-    - range of inputs.
+   each problem file represent a specific problem which means that it has the properties:
+   - sub-systems
+   - input components
+   - outputs component
+   - number of normal observations
+   - the normal observations.
+   - number of buggy observations.
+   - the buggy observations. 
+   - the id of the buggy components.
+   - range of inputs.
     
     
    the simple algorithm save the normal observations in hase tables, and than for each suspect
