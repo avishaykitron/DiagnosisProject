@@ -37,7 +37,7 @@ This project consist of some parts -
    ##Problems generator##
    
    
-   #Daignosis#
+   ##Daignosis##
    
    This code writen in python.
    After that we generate system and many problems, we save the porblems in a directory. 
@@ -53,20 +53,21 @@ This project consist of some parts -
     - the id of the buggy components.
     - range of inputs.
     
-    the simple algorithm save the normal observations in hase tables, and than for each suspect
-    observation , if it buggy observation , we check if the algorithm found it. in case that we found it
-    we define it as an hit. 
-    the sucess rate define as - hits/number of buggy observation. 
     
-    the algorithm with regression idea in addition to the hase table, generate regression model for each 
-    subsystem, and if the system have enough normal observation, we try to found buggy observation
-    with the model. 
+   the simple algorithm save the normal observations in hase tables, and than for each suspect
+   observation , if it buggy observation , we check if the algorithm found it. in case that we found it
+   we define it as an hit. 
+   the sucess rate define as - hits/number of buggy observation. 
     
-    the file program.py has to functions. 
-    the first function get a diretory path and run the simple algorithm for each file in the directory,
-    and save the results of the runs in a csv file. 
+   the algorithm with regression idea in addition to the hase table, generate regression model for each 
+   subsystem, and if the system have enough normal observation, we try to found buggy observation
+   with the model. 
     
-    the second function do the same thing with the regression algorthim. 
+   the file program.py has to functions. 
+   the first function get a diretory path and run the simple algorithm for each file in the directory,
+   and save the results of the runs in a csv file. 
+    
+   the second function do the same thing with the regression algorthim. 
     
     
     
