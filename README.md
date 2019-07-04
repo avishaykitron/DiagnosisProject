@@ -34,10 +34,11 @@ This project consist of some parts -
    in addition the last row in the file shows which component is an output component.
    and the last column shows which component is an input component. 
    
-   ##Problems generator##
+   
+## Problems generator ##
    
    
-   ##Daignosis##
+# Daignosis #
    
    This code writen in python.
    After that we generate system and many problems, we save the porblems in a directory. 
