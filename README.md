@@ -1,4 +1,4 @@
-# This is project for Roni Stern #
+# This is a Project for Roni Stern #
 This project consist of: 
  - Systems generator
  - Problems generator
@@ -36,12 +36,21 @@ This project consist of:
    
    
 # Problems generator #
-   
+   This code is written in Python.
+   After we generate a system, we use this file to create problem instances files. In the end of Graph.py, you can see an example of a code (in comments) of using a system file in order to create a single problem file named "ProblemDatasetLG\\SM_output.txt".
+   In GenerationRelatedStuff.py, you can see (in comments) several examples of creating many problems files (with generate_instance_file method). This method allows easy creation of problem files by giving the following parameters:
+   - System path
+   - Number of regular observations
+   - Number of buggy observations
+   - number of bugs to implant
+   - output path
+
+   The output file will be built based parameters
    
 # Daignosis #
    
-   This code writen in python.
-   After that we generate system and many problems, we save the porblems in a directory. 
+   This code writen in Python.
+   After that we generate system and many problems, we save the problems in a directory. 
    
    each problem file represent a specific problem which means that it has the properties:
    - sub-systems
@@ -70,8 +79,11 @@ This project consist of:
     
    the second function do the same thing with the regression algorthim. 
     
-    
-    
+In order to run the experiments we conducted, please refer to program.py and perform the following:
+1. Update DIRECTORY_PATH to point to the relevant folder in your project (the folder should contain all problems file you want to examine)
+2. Choose between run_experiments and run_regression_expirment (The first function will run the base solver, as described the paper we based our work on and the second function will run our solver).
+3. Run the script
 
- 
+The results will be saved in 'results.csv'. An example file is given in this project.
 
+*For more details about the solvers and the results of the experiment, please refer to the presentation (sent via E-mail)*
