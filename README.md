@@ -12,9 +12,10 @@ This project consist of:
   ## Assumptions ##
    - Any input's component, have one argument . which means have one paramter in the linear combination. 
    - The system without cycles. 
-   - There are cases that the system not fully conected , due to the randomly behavior.
-   - each component as one result and it the solution of the linear combination. 
+   - There are cases that the system not fully conected , due to the random behavior.
+   - each component has one result and it the solution of the linear combination. 
    - output of component can be input for many other components. 
+   - If a component is a SYSIN, it will have only one input (will be of he form a*x0+b) - this assumption doesn't limit the system options becease any desired system can be presented with additional "SYSIN"s of the form 1*x0+0.
   
   To generate new system you should run The File Program.java
   There are some parameters that define the system. you should insert the next properties. 
@@ -45,12 +46,12 @@ This project consist of:
    - number of bugs to implant
    - output path
 
-   The output file will be built based parameters
+   The output file will be built based on the given parameters.
    
 # Daignosis #
    
-   This code writen in Python.
-   After that we generate system and many problems, we save the problems in a directory. 
+   This code is written in Python.
+   After we generates a system and many problems, we save the problems in a directory. 
    
    each problem file represent a specific problem which means that it has the properties:
    - sub-systems
@@ -65,22 +66,22 @@ This project consist of:
     
     
    the simple algorithm save the normal observations in hase tables, and than for each suspect
-   observation , if it buggy observation , we check if the algorithm found it. in case that we found it
+   observation , if it's a buggy observation , we check if the algorithm found it. in case that we found it
    we define it as an hit. 
    the sucess rate define as - hits/number of buggy observation. 
     
    the algorithm with regression idea in addition to the hase table, generate regression model for each 
-   subsystem, and if the system have enough normal observation, we try to found buggy observation
+   subsystem, and if the system have enough normal observation, we try to find buggy observation
    with the model. 
     
-   the file program.py has to functions. 
-   the first function get a diretory path and run the simple algorithm for each file in the directory,
-   and save the results of the runs in a csv file. 
+   the file program.py has two functions. 
+   the first function gets a diretory path, runs the simple algorithm for each file in the directory,
+   and saves the results of the runs in a csv file. 
     
    the second function do the same thing with the regression algorthim. 
     
 In order to run the experiments we conducted, please refer to program.py and perform the following:
-1. Update DIRECTORY_PATH to point to the relevant folder in your project (the folder should contain all problems file you want to examine)
+1. Update DIRECTORY_PATH to point to the relevant folder in your project (the folder should contain all problems file you want to examine) - we had 3 folders named ProblemDataset, ProblemDatasetFP & ProblemDatasetLG
 2. Choose between run_experiments and run_regression_expirment (The first function will run the base solver, as described the paper we based our work on and the second function will run our solver).
 3. Run the script
 
